@@ -19,7 +19,7 @@ type Akun struct {
 	username    string
 	password    string
 	recovery    string
-	saldo       int
+	saldo       float64
 	aset        float64
 	nkriptoAset int
 	namaKrip    string
@@ -113,8 +113,9 @@ func main() {
 		fmt.Println("4. Lihat Portofolio")
 		fmt.Println("5. Lihat Riwayat Transaksi")
 		fmt.Println("6. Beli Kripto")
-		fmt.Println("7. LogOut")
-		fmt.Println("8. Keluar")
+		fmt.Println("7. Jual Kripto")
+		fmt.Println("8. LogOut")
+		fmt.Println("9. Keluar")
 		fmt.Println("-----------------------------------------")
 		fmt.Print("Pilih menu: ")
 		fmt.Scan(&b)
@@ -133,11 +134,13 @@ func main() {
 		case 6:
 			Beli(&a, k, idxAcc, nkripto)
 		case 7:
+			jual(&a, idxAcc)
+		case 8:
 			akun(&a, &nAkun, &idxAcc, &exit)
 			if exit {
 				return
 			}
-		case 8:
+		case 9:
 			return
 		default:
 			fmt.Println("Pilihan tidak valid")
@@ -524,7 +527,7 @@ func Beli(A *arrAkun, B kripto, idxAcc, nkripto int) {
 }
 
 func lihatPortofolio(A arrAkun, idx int) {
-	var i int
+	var i, a int
 	clearScreen()
 	fmt.Println("-----------------------------------------")
 	fmt.Println("|              Portofolio               |")
@@ -532,7 +535,57 @@ func lihatPortofolio(A arrAkun, idx int) {
 	for i = 0; i < A[idx].nkriptoAset; i++ {
 		fmt.Printf("%d. %s - Jumlah: %f\n", i+1, A[idx].kripto[i].nama, A[idx].kripto[i].jumlah)
 	}
+	fmt.Printf("Saldo: Rp %d\n", int(A[idx].saldo))
 	fmt.Printf("Total Aset: Rp %d\n", int(A[idx].aset))
 	fmt.Println("-----------------------------------------")
+	fmt.Println("1. Deposit")
+	fmt.Println("2. Withdraw")
+	fmt.Println("3. Kembali")
+	fmt.Print("Pilih menu: ")
+	fmt.Scan(&a)
+	switch a {
+	case 1:
+		deposit(&A, idx)
+	case 2:
+		withdraw(&A, idx)
+	case 3:
+		return
+	default:
+		fmt.Println("Pilihan tidak valid")
+	}
 	enterKembali()
+}
+
+func deposit(A *arrAkun, idxAcc int) {
+	var depo float64
+	fmt.Println("Masukkan jumlah yang ingin didepositkan:")
+	fmt.Scan(&depo)
+	A[idxAcc].saldo = depo
+}
+
+func withdraw(A *arrAkun, idxAcc int) {
+	var narik float64
+	fmt.Println("Masukkan jumlah yang ingin diambil:")
+	fmt.Scan(&narik)
+	A[idxAcc].saldo = float64(A[idxAcc].aset) - narik
+}
+
+func jual(A *arrAkun, idxAcc int) {
+	var jumlah float64
+	var kripto string
+	var idxKripto int
+	lihatPortofolio(*A, idxAcc)
+	fmt.Println("Masukkan nama kripto yang ingin dijual:")
+	fmt.Scan(&kripto)
+	idxKripto = sequentialSearchStr(A[idxAcc].kripto, A[idxAcc].nkriptoAset, kripto)
+	if idxKripto != -1 {
+		fmt.Println("Masukkan jumlah yang ingin dijual:")
+		fmt.Scan(&jumlah)
+		A[idxAcc].kripto[idxKripto].jumlah = A[idxAcc].kripto[idxKripto].jumlah - jumlah
+		A[idxAcc].aset = A[idxAcc].aset - (A[idxAcc].kripto[idxKripto].jumlah * float64(A[idxAcc].kripto[idxKripto].harga))
+		A[idxAcc].saldo = A[idxAcc].saldo + (jumlah * float64(A[idxAcc].kripto[idxKripto].harga))
+	} else {
+		fmt.Println("Kripto tidak ditemukan!")
+	}
+
 }
