@@ -589,3 +589,7 @@ func jual(A *arrAkun, idxAcc int) {
 	}
 
 }
+
+func lihatRiwayat(A arrAkun, idxAcc int) {
+
+}
