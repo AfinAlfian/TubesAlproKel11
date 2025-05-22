@@ -2,49 +2,42 @@ package main
 
 import (
 	"fmt"
-	//"math/rand"
-	//"time"
+	"math/rand"
 	"os"
 	"os/exec"
+	"time"
 )
 
 const NMAX int = 1024
 
-type arrAkun [NMAX]Akun
-type kripto [NMAX]Akripto
-type porto [NMAX]Aportofolio
-type riwayat [NMAX]Ariwayat
+type arrAkun [NMAX]akun
+type arrKripto [NMAX]kripto
+type arrRiwayat [NMAX]riwayat
 
-type Akun struct {
+type akun struct {
 	username    string
 	password    string
 	recovery    string
 	saldo       float64
 	aset        float64
-	nkriptoAset int
-	namaKrip    string
-	jHarga      int
-	kripto
+	nAsetKripto int
+	nRiwayat    int
+	arrKripto
+	arrRiwayat
 }
 
-type Akripto struct {
+type kripto struct {
 	nama        string
-	harga       int
+	harga       float64
 	jumlah      float64
 	totalKripto int
 }
 
-type Aportofolio struct {
-	keuntungan int
-	kerugian   int
-}
-
-type Ariwayat struct {
-	status  string
-	nkripto string
-	jumlah  float64
-	harga   int
-	tanggal string
+type riwayat struct {
+	jenis  string
+	nama   string
+	jumlah float64
+	waktu  string
 }
 
 func clearScreen() {
@@ -64,9 +57,9 @@ func enterKembali() {
 
 func main() {
 	var a arrAkun
-	var k kripto
+	var k arrKripto
 	var b, nAkun, idxAcc int
-	var nkripto int = 10
+	var nKripto int = 10
 	var exit bool = false
 
 	k[0].nama = "Bitcoin"
@@ -90,7 +83,7 @@ func main() {
 	k[8].harga = 16700
 	k[9].harga = 10700000
 
-	akun(&a, &nAkun, &idxAcc, &exit)
+	menuAkun(&a, &nAkun, &idxAcc, &exit)
 	if exit {
 		return
 	}
@@ -101,19 +94,19 @@ func main() {
 		fmt.Println("-----------------------------------------")
 		fmt.Println("username:", a[idxAcc].username)
 		fmt.Println("Total Aset: Rp", int(a[idxAcc].aset))
-		fmt.Println(idxAcc)
+		fmt.Println("Saldo: Rp", int(a[idxAcc].saldo))
 		fmt.Println("-----------------------------------------")
 		for i := 0; i < 3; i++ {
-			fmt.Println(i+1, k[i].nama, "Harga:", k[i].harga)
+			fmt.Println(i+1, k[i].nama, "Harga:", int(k[i].harga))
 		}
 		fmt.Println("-----------------------------------------")
 		fmt.Println("1. Lihat Daftar Kripto")
 		fmt.Println("2. Cari Kripto")
 		fmt.Println("3. Edit Kripto")
 		fmt.Println("4. Lihat Portofolio")
-		fmt.Println("5. Lihat Riwayat Transaksi")
-		fmt.Println("6. Beli Kripto")
-		fmt.Println("7. Jual Kripto")
+		fmt.Println("5. Deposit")
+		fmt.Println("6. Withdraw")
+		fmt.Println("7. Lihat Riwayat Transaksi")
 		fmt.Println("8. LogOut")
 		fmt.Println("9. Keluar")
 		fmt.Println("-----------------------------------------")
@@ -122,21 +115,22 @@ func main() {
 
 		switch b {
 		case 1:
-			lihatKripto(k, nkripto)
+			lihatKripto(k, nKripto)
 			enterKembali()
 		case 2:
-			cariKriptoSeq(k, nkripto)
+			cariKriptoSeq(k, nKripto)
 		case 3:
-			menuKripto(&k, &nkripto)
+			menuKripto(&k, &nKripto)
 		case 4:
-			lihatPortofolio(a, idxAcc)
+			portofolio(&a, &k, idxAcc, nKripto)
 		case 5:
+			deposit(&a, idxAcc)
 		case 6:
-			Beli(&a, k, idxAcc, nkripto)
+			withdraw(&a, idxAcc)
 		case 7:
-			jual(&a, idxAcc)
+			LihatRiwayatTransaksi(&a, idxAcc)
 		case 8:
-			akun(&a, &nAkun, &idxAcc, &exit)
+			menuAkun(&a, &nAkun, &idxAcc, &exit)
 			if exit {
 				return
 			}
@@ -144,12 +138,13 @@ func main() {
 			return
 		default:
 			fmt.Println("Pilihan tidak valid")
+			enterKembali()
 		}
 	}
 
 }
 
-func akun(A *arrAkun, nAkun, idx *int, exit *bool) {
+func menuAkun(A *arrAkun, nAkun, idx *int, exit *bool) {
 	var a int
 	var cek bool
 	*exit = false
@@ -177,6 +172,7 @@ func akun(A *arrAkun, nAkun, idx *int, exit *bool) {
 			return
 		default:
 			fmt.Println("Pilihan tidak valid")
+			enterKembali()
 		}
 	}
 }
@@ -234,7 +230,7 @@ func register(A *arrAkun, n *int) {
 	*n++
 }
 
-func menuKripto(k *kripto, n *int) {
+func menuKripto(k *arrKripto, n *int) {
 	var a int
 	var x string
 
@@ -246,8 +242,7 @@ func menuKripto(k *kripto, n *int) {
 		fmt.Println("1. Lihat Daftar Kripto")
 		fmt.Println("2. Tambah Kripto")
 		fmt.Println("3. Hapus Kripto")
-		//fmt.Println("4. Urutkan Kripto")
-		fmt.Println("5. Kembali ke Menu Utama")
+		fmt.Println("4. Kembali ke Menu Utama")
 		fmt.Println("-----------------------------------------")
 		fmt.Print("Pilih menu: ")
 		fmt.Scan(&a)
@@ -269,8 +264,6 @@ func menuKripto(k *kripto, n *int) {
 			fmt.Scan(&x)
 			hapusKripto(k, n, x)
 		case 4:
-
-		case 5:
 			return
 		default:
 			fmt.Println("Pilihan tidak valid")
@@ -278,19 +271,19 @@ func menuKripto(k *kripto, n *int) {
 	}
 }
 
-func lihatKripto(k kripto, n int) {
+func lihatKripto(k arrKripto, n int) {
 	//var dummy string
 	clearScreen()
 	fmt.Println("-----------------------------------------")
 	fmt.Println("|              Daftar Kripto            |")
 	fmt.Println("-----------------------------------------")
 	for i := 0; i < n; i++ {
-		fmt.Println(i+1, k[i].nama, "Harga:", k[i].harga)
+		fmt.Println(i+1, k[i].nama, "Harga:", int(k[i].harga))
 	}
 	fmt.Println("-----------------------------------------")
 }
 
-func inputKripto(k *kripto, n *int) {
+func inputKripto(k *arrKripto, n *int) {
 	var x string
 
 	for {
@@ -315,7 +308,7 @@ func inputKripto(k *kripto, n *int) {
 	}
 }
 
-func hapusKripto(k *kripto, n *int, x string) {
+func hapusKripto(k *arrKripto, n *int, x string) {
 	var i, j int
 	for i = 0; i < *n; i++ {
 		if k[i].nama == x {
@@ -328,7 +321,7 @@ func hapusKripto(k *kripto, n *int, x string) {
 	fmt.Println("Kripto sudah terhapus.")
 }
 
-func cariKriptoBin(k *kripto, n int) {
+func cariKriptoBin(k *arrKripto, n int) {
 	var search string
 	var idx int
 
@@ -346,7 +339,7 @@ func cariKriptoBin(k *kripto, n int) {
 	enterKembali()
 }
 
-func urutkanKripto(k *kripto, n int) {
+func urutkanKripto(k *arrKripto, n int) {
 	var y, s string
 	fmt.Print("Urutkan berdasarkan harga (tertinggi/terendah)?: ")
 	fmt.Scan(&y)
@@ -367,7 +360,7 @@ func urutkanKripto(k *kripto, n int) {
 	}
 }
 
-func cariKriptoSeq(k kripto, n int) {
+func cariKriptoSeq(k arrKripto, n int) {
 	var y, search2 string
 	var search1, idx int
 
@@ -397,7 +390,7 @@ func cariKriptoSeq(k kripto, n int) {
 	enterKembali()
 }
 
-func binarySearchStrAsc(A kripto, n int, x string) int {
+func binarySearchStrAsc(A arrKripto, n int, x string) int {
 	var left, right, mid, idx int
 
 	left = 0
@@ -416,18 +409,18 @@ func binarySearchStrAsc(A kripto, n int, x string) int {
 	return idx
 }
 
-func sequentialSearchInt(A kripto, n, x int) int {
+func sequentialSearchInt(A arrKripto, n, x int) int {
 	var i, idx int
 	idx = -1
 	for i = 0; i < n; i++ {
-		if A[i].harga == x {
+		if int(A[i].harga) == x {
 			idx = i
 		}
 	}
 	return idx
 }
 
-func sequentialSearchStr(A kripto, n int, x string) int {
+func sequentialSearchStr(A arrKripto, n int, x string) int {
 	var i, idx int
 	idx = -1
 	for i = 0; i < n; i++ {
@@ -438,9 +431,9 @@ func sequentialSearchStr(A kripto, n int, x string) int {
 	return idx
 }
 
-func SelectionSortIntDes(A *kripto, n int) {
+func SelectionSortIntDes(A *arrKripto, n int) {
 	var i, idx, pass int
-	var temp Akripto
+	var temp kripto
 
 	pass = 1
 	for pass < n {
@@ -459,9 +452,9 @@ func SelectionSortIntDes(A *kripto, n int) {
 	}
 }
 
-func SelectionSortStrAsc(A *kripto, n int) {
+func SelectionSortStrAsc(A *arrKripto, n int) {
 	var i, idx, pass int
-	var temp Akripto
+	var temp kripto
 
 	pass = 1
 	for pass < n {
@@ -481,9 +474,9 @@ func SelectionSortStrAsc(A *kripto, n int) {
 	}
 }
 
-func insertionSortIntAsc(A *kripto, n int) {
+func insertionSortIntAsc(A *arrKripto, n int) {
 	var pass, i int
-	var temp Akripto
+	var temp kripto
 
 	pass = 1
 	for pass <= n-1 {
@@ -498,98 +491,180 @@ func insertionSortIntAsc(A *kripto, n int) {
 	}
 }
 
-func Beli(A *arrAkun, B kripto, idxAcc, nkripto int) {
-	var jumlah, idx int
+func Beli(A *arrAkun, B arrKripto, idxAcc, nkripto int) {
+	var idx int
 	var beliKripto, x string
-	x = "y"
+	var jumlah float64
 	clearScreen()
-	for x == "y" {
-		for {
-			fmt.Print("Masukkan nama kripto yang akan dibeli: ")
-			fmt.Scan(&beliKripto)
-			idx = sequentialSearchStr(B, nkripto, beliKripto)
-			if idx != -1 {
-				break
-			} else {
-				fmt.Println("Kripto tidak ditemukan!")
+	for {
+		fmt.Print("Masukkan nama kripto yang akan dibeli: ")
+		fmt.Scan(&beliKripto)
+		idx = sequentialSearchStr(B, nkripto, beliKripto)
+		if idx == -1 {
+			fmt.Println("Kripto tidak ditemukan!")
+			return
+		}
+
+		fmt.Print("Masukkan jumlah harga kripto yang akan dibeli: ")
+		fmt.Scan(&jumlah)
+		if jumlah <= 0 {
+			fmt.Println("Jumlah tidak boleh 0 atau negatif")
+		} else {
+			if A[idxAcc].saldo < jumlah {
+				fmt.Println("Saldo tidak cukup")
+				fmt.Println("Saldo anda: Rp", int(A[idxAcc].saldo))
+				fmt.Println("Silahkan isi saldo terlebih dahulu")
+				enterKembali()
+				return
+			}
+			A[idxAcc].arrKripto[A[idxAcc].nAsetKripto].nama = beliKripto
+			A[idxAcc].arrKripto[A[idxAcc].nAsetKripto].jumlah = float64(jumlah) / float64(B[idx].harga)
+			randomHarga(&B, nkripto)
+			A[idxAcc].aset += A[idxAcc].arrKripto[A[idxAcc].nAsetKripto].jumlah * float64(B[idx].harga)
+			A[idxAcc].saldo -= jumlah
+			A[idxAcc].nAsetKripto++
+
+			A[idxAcc].arrRiwayat[A[idxAcc].nRiwayat].jenis = "Beli"
+			A[idxAcc].arrRiwayat[A[idxAcc].nRiwayat].nama = beliKripto
+			A[idxAcc].arrRiwayat[A[idxAcc].nRiwayat].jumlah = jumlah
+			A[idxAcc].arrRiwayat[A[idxAcc].nRiwayat].waktu = time.Now().Format("2006-01-02 15:04:05")
+			A[idxAcc].nRiwayat++
+
+			fmt.Print("Ingin melakukan transaksi lagi (y/n)?")
+			fmt.Scan(&x)
+			if x == "n" {
+				return
 			}
 		}
-		fmt.Print("Masukkan jumlah kripto yang akan dibeli: ")
-		fmt.Scan(&jumlah)
-
-		A[idxAcc].kripto[A[idxAcc].nkriptoAset].nama = beliKripto
-		A[idxAcc].kripto[A[idxAcc].nkriptoAset].jumlah = float64(jumlah) / float64(B[idx].harga)
-		A[idxAcc].aset += A[idxAcc].kripto[A[idxAcc].nkriptoAset].jumlah * float64(B[idx].harga)
-		A[idxAcc].nkriptoAset++
-		fmt.Print("Ingin melakukan transaksi lagi (y/n)?")
-		fmt.Scan(&x)
 	}
 }
 
-func lihatPortofolio(A arrAkun, idx int) {
+func portofolio(A *arrAkun, B *arrKripto, idxAcc, nKripto int) {
 	var i, a int
-	clearScreen()
-	fmt.Println("-----------------------------------------")
-	fmt.Println("|              Portofolio               |")
-	fmt.Println("-----------------------------------------")
-	for i = 0; i < A[idx].nkriptoAset; i++ {
-		fmt.Printf("%d. %s - Jumlah: %f\n", i+1, A[idx].kripto[i].nama, A[idx].kripto[i].jumlah)
+	for {
+		clearScreen()
+		fmt.Println("-----------------------------------------")
+		fmt.Println("|              Portofolio               |")
+		fmt.Println("-----------------------------------------")
+		for i = 0; i < A[idxAcc].nAsetKripto; i++ {
+			fmt.Printf("%d. %s - Jumlah: %f\n", i+1, A[idxAcc].arrKripto[i].nama, A[idxAcc].arrKripto[i].jumlah)
+		}
+		fmt.Printf("Saldo: Rp %d\n", int(A[idxAcc].saldo))
+		fmt.Printf("Total Aset: Rp %d\n", int(A[idxAcc].aset))
+		fmt.Println("-----------------------------------------")
+		fmt.Println("1. Beli Kripto")
+		fmt.Println("2. Jual Kripto")
+		fmt.Println("3. Kembali ke Menu Utama")
+		fmt.Println("-----------------------------------------")
+		fmt.Print("Pilih menu: ")
+		fmt.Scan(&a)
+		switch a {
+		case 1:
+
+			Beli(A, *B, idxAcc, nKripto)
+		case 2:
+			jual(A, B, idxAcc, nKripto)
+
+		case 3:
+			return
+		default:
+			fmt.Println("Pilihan tidak valid")
+		}
 	}
-	fmt.Printf("Saldo: Rp %d\n", int(A[idx].saldo))
-	fmt.Printf("Total Aset: Rp %d\n", int(A[idx].aset))
-	fmt.Println("-----------------------------------------")
-	fmt.Println("1. Deposit")
-	fmt.Println("2. Withdraw")
-	fmt.Println("3. Kembali")
-	fmt.Print("Pilih menu: ")
-	fmt.Scan(&a)
-	switch a {
-	case 1:
-		deposit(&A, idx)
-	case 2:
-		withdraw(&A, idx)
-	case 3:
-		return
-	default:
-		fmt.Println("Pilihan tidak valid")
-	}
-	enterKembali()
 }
 
 func deposit(A *arrAkun, idxAcc int) {
 	var depo float64
 	fmt.Println("Masukkan jumlah yang ingin didepositkan:")
 	fmt.Scan(&depo)
-	A[idxAcc].saldo = depo
+	A[idxAcc].saldo += depo
+
+	A[idxAcc].arrRiwayat[A[idxAcc].nRiwayat].jenis = "Deposit"
+	A[idxAcc].arrRiwayat[A[idxAcc].nRiwayat].jumlah = depo
+	A[idxAcc].arrRiwayat[A[idxAcc].nRiwayat].waktu = time.Now().Format("2006-01-02 15:04:05")
+	A[idxAcc].nRiwayat++
+	fmt.Println("Deposit berhasil!")
+	enterKembali()
 }
 
 func withdraw(A *arrAkun, idxAcc int) {
 	var narik float64
 	fmt.Println("Masukkan jumlah yang ingin diambil:")
 	fmt.Scan(&narik)
-	A[idxAcc].saldo = float64(A[idxAcc].aset) - narik
+	if A[idxAcc].saldo < narik {
+		fmt.Println("Saldo tidak cukup")
+		fmt.Println("Saldo anda: Rp", int(A[idxAcc].saldo))
+		enterKembali()
+	} else {
+		A[idxAcc].saldo -= narik
+		A[idxAcc].arrRiwayat[A[idxAcc].nRiwayat].jenis = "Withdraw"
+		A[idxAcc].arrRiwayat[A[idxAcc].nRiwayat].jumlah = narik
+		A[idxAcc].arrRiwayat[A[idxAcc].nRiwayat].waktu = time.Now().Format("2006-01-02 15:04:05")
+		A[idxAcc].nRiwayat++
+	}
+	fmt.Println("Withdraw berhasil!")
+	enterKembali()
 }
 
-func jual(A *arrAkun, idxAcc int) {
+func jual(A *arrAkun, B *arrKripto, idxAcc, nKripto int) {
 	var jumlah float64
 	var kripto string
-	var idxKripto int
-	lihatPortofolio(*A, idxAcc)
+	var idxKripto, idxKriptoJual int
 	fmt.Println("Masukkan nama kripto yang ingin dijual:")
 	fmt.Scan(&kripto)
-	idxKripto = sequentialSearchStr(A[idxAcc].kripto, A[idxAcc].nkriptoAset, kripto)
-	if idxKripto != -1 {
+	idxKripto = sequentialSearchStr(*B, nKripto, kripto)
+	idxKriptoJual = sequentialSearchStr(A[idxAcc].arrKripto, A[idxAcc].nAsetKripto, kripto)
+	if idxKriptoJual != -1 {
 		fmt.Println("Masukkan jumlah yang ingin dijual:")
 		fmt.Scan(&jumlah)
-		A[idxAcc].kripto[idxKripto].jumlah = A[idxAcc].kripto[idxKripto].jumlah - jumlah
-		A[idxAcc].aset = A[idxAcc].aset - (A[idxAcc].kripto[idxKripto].jumlah * float64(A[idxAcc].kripto[idxKripto].harga))
-		A[idxAcc].saldo = A[idxAcc].saldo + (jumlah * float64(A[idxAcc].kripto[idxKripto].harga))
+		A[idxAcc].arrKripto[idxKriptoJual].jumlah -= jumlah
+		A[idxAcc].aset -= jumlah * float64(B[idxKripto].harga)
+		A[idxAcc].saldo += jumlah * float64(B[idxKripto].harga)
+		randomHarga(B, nKripto)
+		if A[idxAcc].arrKripto[idxKriptoJual].jumlah <= 0 {
+			hapusAsetKripto(A, idxAcc, idxKriptoJual)
+		}
+
+		A[idxAcc].arrRiwayat[A[idxAcc].nRiwayat].jenis = "Jual"
+		A[idxAcc].arrRiwayat[A[idxAcc].nRiwayat].nama = kripto
+		A[idxAcc].arrRiwayat[A[idxAcc].nRiwayat].jumlah = jumlah
+		A[idxAcc].arrRiwayat[A[idxAcc].nRiwayat].waktu = time.Now().Format("2006-01-02 15:04:05")
+		A[idxAcc].nRiwayat++
 	} else {
 		fmt.Println("Kripto tidak ditemukan!")
 	}
-
+	fmt.Println("Jual berhasil!")
+	enterKembali()
 }
 
-func lihatRiwayat(A arrAkun, idxAcc int) {
+func hapusAsetKripto(A *arrAkun, idxAcc int, idxKriptoJual int) {
+	var i, j int
+	for i = 0; i < A[idxAcc].nAsetKripto; i++ {
+		if A[idxAcc].arrKripto[i].nama == A[idxAcc].arrKripto[idxKriptoJual].nama {
+			for j = i; j < A[idxAcc].nAsetKripto-1; j++ {
+				A[idxAcc].arrKripto[j] = A[idxAcc].arrKripto[j+1]
+			}
+			A[idxAcc].nAsetKripto--
+		}
+	}
+}
 
+func randomHarga(A *arrKripto, nKripto int) {
+	var i int
+	for i = 0; i < nKripto; i++ {
+		A[i].harga += A[i].harga * (float64(rand.Intn(151)-50) / 100)
+	}
+}
+
+func LihatRiwayatTransaksi(A *arrAkun, idxAcc int) {
+	var i int
+	clearScreen()
+	fmt.Println("-----------------------------------------")
+	fmt.Println("|         Riwayat Transaksi              |")
+	fmt.Println("-----------------------------------------")
+	for i = 0; i < A[idxAcc].nRiwayat; i++ {
+		fmt.Println(i+1, A[idxAcc].arrRiwayat[i].jenis, ":", A[idxAcc].arrRiwayat[i].nama, "Jumlah:", A[idxAcc].arrRiwayat[i].jumlah, "Waktu:", A[idxAcc].arrRiwayat[i].waktu)
+	}
+	fmt.Println("-----------------------------------------")
+	enterKembali()
 }
