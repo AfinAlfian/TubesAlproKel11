@@ -19,6 +19,9 @@ type akun struct {
 	password    string
 	recovery    string
 	saldo       float64
+	modal       float64
+	keuntungan  float64
+	kerugian    float64
 	aset        float64
 	nAsetKripto int
 	nRiwayat    int
@@ -558,6 +561,7 @@ func Beli(A *arrAkun, B arrKripto, idxAcc, nkripto int) {
 			A[idxAcc].saldo -= jumlah
 			A[idxAcc].nAsetKripto++
 			randomHarga(&B, nkripto)
+			A[idxAcc].modal += jumlah
 
 			A[idxAcc].arrRiwayat[A[idxAcc].nRiwayat].jenis = "Beli"
 			A[idxAcc].arrRiwayat[A[idxAcc].nRiwayat].nama = beliKripto
@@ -575,7 +579,7 @@ func Beli(A *arrAkun, B arrKripto, idxAcc, nkripto int) {
 }
 
 func portofolio(A *arrAkun, B *arrKripto, idxAcc, nKripto int) {
-	var i int
+	var i, gain int
 	clearScreen()
 	fmt.Println("-----------------------------------------")
 	fmt.Println("|              Portofolio               |")
@@ -586,6 +590,14 @@ func portofolio(A *arrAkun, B *arrKripto, idxAcc, nKripto int) {
 	fmt.Printf("Saldo: Rp %d\n", int(A[idxAcc].saldo))
 	hitungAset(A, *B, idxAcc, nKripto)
 	fmt.Printf("Total Aset: Rp %d\n", int(A[idxAcc].aset))
+	gain = keuntunganKerugian(A, idxAcc)
+	if gain > 0 {
+		fmt.Print("Gain : Rp +", gain)
+		fmt.Println()
+	} else {
+		fmt.Printf("Gain : Rp -", gain)
+		fmt.Println()
+	}
 	fmt.Println("-----------------------------------------")
 }
 
@@ -659,6 +671,13 @@ func hitungAset(A *arrAkun, B arrKripto, idxAcc, nKripto int) {
 		idxKripto = sequentialSearchStr(B, nKripto, A[idxAcc].arrKripto[i].nama)
 		A[idxAcc].aset += A[idxAcc].arrKripto[i].jumlah * B[idxKripto].harga
 	}
+}
+
+func keuntunganKerugian(A *arrAkun, idxAcc int) int {
+	var pendapatan float64
+
+	pendapatan = A[idxAcc].aset - A[idxAcc].modal
+	return int(pendapatan)
 }
 
 func hapusAsetKripto(A *arrAkun, idxAcc int, idxKriptoJual int) {
