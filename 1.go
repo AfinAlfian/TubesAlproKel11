@@ -82,7 +82,7 @@ func enterKembali() {
 }
 
 func menuUtama(a *arrAkun, k *arrKripto, idxAcc, nKripto int, nAkun *int, exit *bool) {
-	var b int
+	var b, i int
 	for {
 		clearScreen()
 		fmt.Println("-----------------------------------------")
@@ -93,7 +93,7 @@ func menuUtama(a *arrAkun, k *arrKripto, idxAcc, nKripto int, nAkun *int, exit *
 		fmt.Println("Total Aset: Rp", int(a[idxAcc].aset))
 		fmt.Println("Saldo: Rp", int(a[idxAcc].saldo))
 		fmt.Println("-----------------------------------------")
-		for i := 0; i < 3; i++ {
+		for i = 0; i < 3; i++ {
 			fmt.Println(i+1, k[i].nama, "Harga:", int(k[i].harga))
 		}
 		fmt.Println("-----------------------------------------")
@@ -195,7 +195,7 @@ func menuAkun(A *arrAkun, nAkun, idx *int, exit *bool) {
 
 func login(A arrAkun, n int, idx *int, cek *bool) {
 	var user, pass, in string
-	var i int
+	var i, j int
 	for i = 0; i < 3; i++ {
 		fmt.Print("Masukkan username (ketik 'back' untuk kembali): ")
 		fmt.Scan(&user)
@@ -205,7 +205,7 @@ func login(A arrAkun, n int, idx *int, cek *bool) {
 		fmt.Print("Masukkan password: ")
 		fmt.Scan(&pass)
 		*idx = -1
-		for j := 0; j < n; j++ {
+		for j = 0; j < n; j++ {
 			if A[j].username == user && A[j].password == pass {
 				*idx = j
 				*cek = true
@@ -598,13 +598,11 @@ func Beli(A *arrAkun, B arrKripto, idxAcc, nkripto int) {
 				enterKembali()
 				return
 			}
-			// Cek apakah kripto sudah ada di portofolio
+
 			idxAset = sequentialSearchStr(A[idxAcc].arrKripto, A[idxAcc].nAsetKripto, beliKripto)
 			if idxAset != -1 {
-				// Jika sudah ada, jumlahkan
 				A[idxAcc].arrKripto[idxAset].jumlah += float64(jumlah) / float64(B[idx].harga)
 			} else {
-				// Jika belum ada, tambahkan baru
 				A[idxAcc].arrKripto[A[idxAcc].nAsetKripto].nama = beliKripto
 				A[idxAcc].arrKripto[A[idxAcc].nAsetKripto].jumlah = float64(jumlah) / float64(B[idx].harga)
 				A[idxAcc].nAsetKripto++
@@ -693,7 +691,7 @@ func jual(A *arrAkun, B *arrKripto, idxAcc, nKripto int) {
 	var jumlah float64
 	var kripto string
 	var idxKripto, idxKriptoJual int
-	fmt.Print("Masukkan nama kripto yang ingin dijual: (ketik 'back' untuk kembali): ")
+	fmt.Print("Masukkan nama kripto yang ingin dijual (ketik 'back' untuk kembali): ")
 	fmt.Scan(&kripto)
 	if kripto == "back" {
 		return
